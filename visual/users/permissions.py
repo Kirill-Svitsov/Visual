@@ -1,16 +1,19 @@
 from rest_framework import permissions
 
-class IsUserOrAdmin(permissions.BasePermission):
+
+class IsOwnerOrAdmin(permissions.BasePermission):
+    """
+        Кастомное разрешение, которое позволяет только владельцам объекта редактировать его.
+        Позволяет администраторам редактировать любой объект.
+    """
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-
         if request.method == 'POST':
-            # Разрешить POST-запрос для создания пользователя
             return True
+        return request.user and (request.user.is_authenticated or request.user.is_admin)
 
-        user_id = request.data.get('id')
-        try:
-            return request.user.is_staff or request.user.id == int(user_id)
-        except (ValueError, TypeError):
-            return False
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj and (obj == request.user or request.user.is_admin)
